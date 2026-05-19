@@ -1,9 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import { useState, useRef } from 'react'
 import { useEventsStore, Event } from '@/store/events'
 import { useLanguageStore } from '@/store/language'
+import SafeImage from '@/components/SafeImage'
 
 export default function AdminEventsPage() {
   const { events, addEvent, updateEvent, deleteEvent } = useEventsStore()
@@ -121,11 +121,10 @@ export default function AdminEventsPage() {
         {events.map((event) => (
           <div key={event.id} className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="relative h-40">
-              <Image
+              <SafeImage
                 src={event.image}
                 alt={getTitle(event)}
                 fill
-                className="object-cover"
               />
               <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-lg font-bold text-sm">
                 ${event.price || 'Free'}
@@ -177,11 +176,7 @@ export default function AdminEventsPage() {
                 <label className="block text-sm font-medium mb-2">Event Image</label>
                 <div className="flex gap-4 items-start">
                   <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
-                    {imagePreview || formData.image ? (
-                      <Image src={imagePreview || formData.image} alt="Preview" fill className="object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400 text-xs">No Image</div>
-                    )}
+                    <SafeImage src={imagePreview || formData.image} alt="Preview" fill />
                   </div>
                   <div className="flex-1">
                     <input

@@ -1,8 +1,8 @@
 'use client'
 
-import Image from 'next/image'
 import { useState, useRef } from 'react'
 import { farms as initialFarms } from '@/data/products'
+import SafeImage from '@/components/SafeImage'
 
 interface Farm {
   id: number
@@ -129,12 +129,7 @@ export default function AdminProducersPage() {
         {farms.map((farm) => (
           <div key={farm.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
             <div className="relative h-48">
-              <Image
-                src={farm.image}
-                alt={farm.name}
-                fill
-                className="object-cover"
-              />
+              <SafeImage src={farm.image} alt={farm.name} fill />
             </div>
             <div className="p-4">
               <h3 className="font-bold mb-1">{farm.name}</h3>
@@ -173,11 +168,7 @@ export default function AdminProducersPage() {
                 <label className="block text-sm font-medium mb-2">Producer Image</label>
                 <div className="flex gap-4 items-start">
                   <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
-                    {imagePreview || formData.image ? (
-                      <Image src={imagePreview || formData.image} alt="Preview" fill className="object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400 text-xs">No Image</div>
-                    )}
+                    <SafeImage src={imagePreview || formData.image} alt="Preview" fill />
                   </div>
                   <div className="flex-1">
                     <input

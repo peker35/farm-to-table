@@ -1,10 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import { useState, useRef } from 'react'
 import { useSettingsStore } from '@/store/settings'
 import { useLanguageStore } from '@/store/language'
 import { useToastStore } from '@/store/toast'
+import SafeImage from '@/components/SafeImage'
 
 export default function AdminSettingsPage() {
   const { logoUrl, setLogoUrl, resetLogo } = useSettingsStore()
@@ -57,11 +57,11 @@ export default function AdminSettingsPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-lg">
               <div className="relative w-20 h-20 flex-shrink-0">
-                <Image
+                <SafeImage
                   src={preview}
                   alt="Logo Preview"
                   fill
-                  className="object-contain"
+                  objectFit="contain"
                 />
               </div>
               <div>
@@ -110,11 +110,11 @@ export default function AdminSettingsPage() {
               <p className="text-sm text-gray-500 mb-3">{t('Header Logosu', 'Header Logo', 'Logo Header')}</p>
               <div className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-sm">
                 <div className="relative w-10 h-10 flex-shrink-0">
-                  <Image
+                  <SafeImage
                     src={preview}
                     alt="Logo"
                     fill
-                    className="object-contain"
+                    objectFit="contain"
                   />
                 </div>
                 <span className="font-bold text-lg">Farm to Table</span>
@@ -125,11 +125,11 @@ export default function AdminSettingsPage() {
               <p className="text-sm text-gray-500 mb-3">{t('Büyük Logo', 'Large Logo', 'Logo Grande')}</p>
               <div className="bg-white p-6 rounded-lg shadow-sm flex items-center justify-center">
                 <div className="relative w-24 h-24">
-                  <Image
+                  <SafeImage
                     src={preview}
                     alt="Logo"
                     fill
-                    className="object-contain"
+                    objectFit="contain"
                   />
                 </div>
               </div>

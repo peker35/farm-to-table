@@ -1,8 +1,8 @@
 'use client'
 
-import Image from 'next/image'
 import { useState, useRef } from 'react'
 import { useProductsStore } from '@/store/products'
+import SafeImage from '@/components/SafeImage'
 
 interface Category {
   slug: string
@@ -232,13 +232,7 @@ export default function AdminProductsPage() {
           {categories.map((cat) => (
             <div key={cat.slug} className="border rounded-lg p-3 relative group">
               <div className="relative aspect-square mb-2 bg-gray-100 rounded-lg overflow-hidden">
-                {cat.image ? (
-                  <Image src={cat.image} alt={cat.name} fill className="object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400 text-xs">
-                    No Image
-                  </div>
-                )}
+                <SafeImage src={cat.image} alt={cat.name} fill />
               </div>
               <h3 className="font-medium text-sm truncate">{cat.name}</h3>
               <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-3 left-3 right-3">
@@ -285,13 +279,7 @@ export default function AdminProductsPage() {
           {filteredProducts.map((product) => (
             <div key={product.id} className="border rounded-lg p-3">
               <div className="relative aspect-square mb-2 bg-gray-100 rounded-lg overflow-hidden">
-                {product.image ? (
-                  <Image src={product.image} alt={product.name} fill className="object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
-                    No Image
-                  </div>
-                )}
+                <SafeImage src={product.image} alt={product.name} fill />
               </div>
               <h3 className="font-medium text-sm truncate">{product.name}</h3>
               <p className="text-xs text-gray-500">${product.price}</p>
@@ -330,11 +318,7 @@ export default function AdminProductsPage() {
                 <label className="block text-sm font-medium mb-2">Product Image</label>
                 <div className="flex gap-4 items-start">
                   <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
-                    {imagePreview || formData.image ? (
-                      <Image src={imagePreview || formData.image} alt="Preview" fill className="object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400 text-xs">No Image</div>
-                    )}
+                    <SafeImage src={imagePreview || formData.image} alt="Preview" fill />
                   </div>
                   <div className="flex-1">
                     <input
@@ -489,11 +473,7 @@ export default function AdminProductsPage() {
                 <label className="block text-sm font-medium mb-2">Category Image</label>
                 <div className="flex gap-4 items-start">
                   <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
-                    {categoryImagePreview || categoryFormData.image ? (
-                      <Image src={categoryImagePreview || categoryFormData.image} alt="Preview" fill className="object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400 text-xs">No Image</div>
-                    )}
+                    <SafeImage src={categoryImagePreview || categoryFormData.image} alt="Preview" fill />
                   </div>
                   <div className="flex-1">
                     <input
