@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useRef } from 'react'
-import { products as initialProducts, categories as initialCategories } from '@/data/products'
+import { useProductsStore } from '@/store/products'
 
 interface Category {
   slug: string
@@ -30,8 +30,7 @@ interface Product {
 }
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [categories, setCategories] = useState<Category[]>(initialCategories)
+  const { products, categories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } = useProductsStore()
   const [showModal, setShowModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -123,26 +122,24 @@ export default function AdminProductsPage() {
     const productData = {
       ...formData,
       price: parseFloat(formData.price) || 0,
-      image: formData.image || imagePreview || '/placeholder.png'
+      image: formData.image || imagePreview || '/placeholder.svg'
     }
 
     if (editingProduct) {
-      setProducts(products.map(p => 
-        p.id === editingProduct.id ? { ...p, ...productData } : p
-      ))
+      updateProduct(editingProduct.id, productData)
     } else {
       const newProduct: Product = {
         ...productData,
         id: Date.now(),
       }
-      setProducts([...products, newProduct])
+      addProduct(newProduct)
     }
     setShowModal(false)
   }
 
   const handleDelete = (id: number) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      setProducts(products.filter(p => p.id !== id))
+      deleteProduct(id)
     }
   }
 
@@ -192,22 +189,20 @@ export default function AdminProductsPage() {
     }
 
     if (editingCategory) {
-      setCategories(categories.map(c => 
-        c.slug === editingCategory.slug ? { ...c, ...categoryData } : c
-      ))
+      updateCategory(editingCategory.slug, categoryData)
     } else {
       const newCategory: Category = {
         ...categoryData,
         slug
       }
-      setCategories([...categories, newCategory])
+      addCategory(newCategory)
     }
     setShowCategoryModal(false)
   }
 
   const handleDeleteCategory = (slug: string) => {
     if (confirm('Are you sure you want to delete this category?')) {
-      setCategories(categories.filter(c => c.slug !== slug))
+      deleteCategory(slug)
     }
   }
 
