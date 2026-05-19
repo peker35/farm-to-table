@@ -7,8 +7,10 @@ import { categories, getCategoryName } from '@/data/products'
 import { useLanguageStore } from '@/store/language'
 import { t, brandNames } from '@/data/translations'
 import LanguageSelector from './LanguageSelector'
+import { useSettingsStore } from '@/store/settings'
 
 export default function Header() {
+  const logoUrl = useSettingsStore(state => state.logoUrl)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
@@ -30,10 +32,11 @@ export default function Header() {
           <Link href="/" className="flex items-center gap-2">
             <div className="relative w-10 h-10">
               <Image
-                src="/logo.png"
+                src={logoUrl}
                 alt="Logo"
                 fill
                 className="object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).src = '/logo.svg' }}
               />
             </div>
             <span className="font-bold text-xl text-gray-900 hidden sm:block">{brand.full}</span>
