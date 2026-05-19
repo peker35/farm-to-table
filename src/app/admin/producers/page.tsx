@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { farms as initialFarms } from '@/data/products'
 import SafeImage from '@/components/SafeImage'
 import { compressImage } from '@/utils/compressImage'
+import { uploadImage, deleteImage } from '@/utils/useImageUpload'
 
 interface Farm {
   id: number
@@ -82,8 +83,9 @@ export default function AdminProducersPage() {
     if (!file) return
     try {
       const compressed = await compressImage(file, { maxWidth: 600, maxHeight: 600, quality: 0.8 })
-      setImagePreview(compressed)
-      setFormData({ ...formData, image: compressed })
+      const url = await uploadImage(new File([compressed], 'producer.jpg', { type: 'image/jpeg' }))
+      setImagePreview(url)
+      setFormData({ ...formData, image: url })
     } catch {
       const reader = new FileReader()
       reader.onload = (event) => {

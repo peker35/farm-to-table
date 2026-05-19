@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useProductsStore } from '@/store/products'
 import SafeImage from '@/components/SafeImage'
 import { compressImage, compressImageToThumbnail } from '@/utils/compressImage'
+import { uploadImage, deleteImage } from '@/utils/useImageUpload'
 
 interface Category {
   slug: string
@@ -108,9 +109,9 @@ export default function AdminProductsPage() {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const compressed = await compressImage(file)
-      setImagePreview(compressed)
-      setFormData({ ...formData, image: compressed })
+      const url = await uploadImage(file)
+      setImagePreview(url)
+      setFormData({ ...formData, image: url })
     } catch {
       const reader = new FileReader()
       reader.onload = (event) => {
@@ -179,8 +180,9 @@ export default function AdminProductsPage() {
     if (!file) return
     try {
       const compressed = await compressImage(file, { maxWidth: 400, maxHeight: 400, quality: 0.7 })
-      setCategoryImagePreview(compressed)
-      setCategoryFormData({ ...categoryFormData, image: compressed })
+      const url = await uploadImage(new File([compressed], 'category.jpg', { type: 'image/jpeg' }))
+      setCategoryImagePreview(url)
+      setCategoryFormData({ ...categoryFormData, image: url })
     } catch {
       const reader = new FileReader()
       reader.onload = (event) => {

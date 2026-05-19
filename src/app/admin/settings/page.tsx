@@ -6,6 +6,7 @@ import { useLanguageStore } from '@/store/language'
 import { useToastStore } from '@/store/toast'
 import SafeImage from '@/components/SafeImage'
 import { compressImage } from '@/utils/compressImage'
+import { uploadImage } from '@/utils/useImageUpload'
 
 export default function AdminSettingsPage() {
   const { logoUrl, setLogoUrl, resetLogo } = useSettingsStore()
@@ -22,8 +23,9 @@ export default function AdminSettingsPage() {
     if (!file) return
     try {
       const compressed = await compressImage(file, { maxWidth: 200, maxHeight: 200, quality: 0.9 })
-      setPreview(compressed)
-      setLogoUrl(compressed)
+      const url = await uploadImage(new File([compressed], 'logo.jpg', { type: 'image/jpeg' }))
+      setPreview(url)
+      setLogoUrl(url)
     } catch {
       const reader = new FileReader()
       reader.onload = (event) => {

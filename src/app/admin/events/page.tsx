@@ -5,6 +5,7 @@ import { useEventsStore, Event } from '@/store/events'
 import { useLanguageStore } from '@/store/language'
 import SafeImage from '@/components/SafeImage'
 import { compressImage } from '@/utils/compressImage'
+import { uploadImage, deleteImage } from '@/utils/useImageUpload'
 
 export default function AdminEventsPage() {
   const { events, addEvent, updateEvent, deleteEvent } = useEventsStore()
@@ -63,8 +64,9 @@ export default function AdminEventsPage() {
     if (!file) return
     try {
       const compressed = await compressImage(file, { maxWidth: 600, maxHeight: 400, quality: 0.8 })
-      setImagePreview(compressed)
-      setFormData({ ...formData, image: compressed })
+      const url = await uploadImage(new File([compressed], 'event.jpg', { type: 'image/jpeg' }))
+      setImagePreview(url)
+      setFormData({ ...formData, image: url })
     } catch {
       const reader = new FileReader()
       reader.onload = (event) => {
