@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { useProductsStore } from '@/store/products'
 import SafeImage from '@/components/SafeImage'
+import { compressImage, compressImageToThumbnail } from '@/utils/compressImage'
 
 interface Category {
   slug: string
@@ -103,17 +104,22 @@ export default function AdminProductsPage() {
     setShowModal(true)
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const result = event.target?.result as string
-      setImagePreview(result)
-      setFormData({ ...formData, image: result })
+    try {
+      const compressed = await compressImage(file)
+      setImagePreview(compressed)
+      setFormData({ ...formData, image: compressed })
+    } catch {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setImagePreview(result)
+        setFormData({ ...formData, image: result })
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -168,16 +174,22 @@ export default function AdminProductsPage() {
     setShowCategoryModal(true)
   }
 
-  const handleCategoryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCategoryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const result = event.target?.result as string
-      setCategoryImagePreview(result)
-      setCategoryFormData({ ...categoryFormData, image: result })
+    try {
+      const compressed = await compressImage(file, { maxWidth: 400, maxHeight: 400, quality: 0.7 })
+      setCategoryImagePreview(compressed)
+      setCategoryFormData({ ...categoryFormData, image: compressed })
+    } catch {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setCategoryImagePreview(result)
+        setCategoryFormData({ ...categoryFormData, image: result })
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleCategorySubmit = (e: React.FormEvent) => {

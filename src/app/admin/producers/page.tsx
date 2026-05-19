@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { farms as initialFarms } from '@/data/products'
 import SafeImage from '@/components/SafeImage'
+import { compressImage } from '@/utils/compressImage'
 
 interface Farm {
   id: number
@@ -76,16 +77,22 @@ export default function AdminProducersPage() {
     setShowModal(true)
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const result = event.target?.result as string
-      setImagePreview(result)
-      setFormData({ ...formData, image: result })
+    try {
+      const compressed = await compressImage(file, { maxWidth: 600, maxHeight: 600, quality: 0.8 })
+      setImagePreview(compressed)
+      setFormData({ ...formData, image: compressed })
+    } catch {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setImagePreview(result)
+        setFormData({ ...formData, image: result })
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleSubmit = (e: React.FormEvent) => {

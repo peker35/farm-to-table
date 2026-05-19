@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useEventsStore, Event } from '@/store/events'
 import { useLanguageStore } from '@/store/language'
 import SafeImage from '@/components/SafeImage'
+import { compressImage } from '@/utils/compressImage'
 
 export default function AdminEventsPage() {
   const { events, addEvent, updateEvent, deleteEvent } = useEventsStore()
@@ -57,17 +58,22 @@ export default function AdminEventsPage() {
     setShowModal(true)
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const result = event.target?.result as string
-      setImagePreview(result)
-      setFormData({ ...formData, image: result })
+    try {
+      const compressed = await compressImage(file, { maxWidth: 600, maxHeight: 400, quality: 0.8 })
+      setImagePreview(compressed)
+      setFormData({ ...formData, image: compressed })
+    } catch {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setImagePreview(result)
+        setFormData({ ...formData, image: result })
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleSubmit = (e: React.FormEvent) => {

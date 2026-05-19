@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/store/settings'
 import { useLanguageStore } from '@/store/language'
 import { useToastStore } from '@/store/toast'
 import SafeImage from '@/components/SafeImage'
+import { compressImage } from '@/utils/compressImage'
 
 export default function AdminSettingsPage() {
   const { logoUrl, setLogoUrl, resetLogo } = useSettingsStore()
@@ -16,21 +17,23 @@ export default function AdminSettingsPage() {
   const t = (tr: string, en: string, it: string) =>
     language === 'tr' ? tr : language === 'it' ? it : en
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const result = event.target?.result as string
-      setPreview(result)
-      setLogoUrl(result)
-      showToast(
-        t('Logo güncellendi!', 'Logo updated!', 'Logo aggiornato!'),
-        'success'
-      )
+    try {
+      const compressed = await compressImage(file, { maxWidth: 200, maxHeight: 200, quality: 0.9 })
+      setPreview(compressed)
+      setLogoUrl(compressed)
+    } catch {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setPreview(result)
+        setLogoUrl(result)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
+    showToast(t('Logo güncellendi!', 'Logo updated!', 'Logo aggiornato!'), 'success')
   }
 
   const handleReset = () => {
