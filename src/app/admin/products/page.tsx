@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import SafeImage from '@/components/SafeImage'
 import { compressImage, compressImageToThumbnail } from '@/utils/compressImage'
-import { uploadImage, deleteImage } from '@/utils/useImageUpload'
+import { dataUrlToFile, uploadImage, deleteImage } from '@/utils/useImageUpload'
 import { api } from '@/lib/api'
 import { useLanguageStore } from '@/store/language'
 import { useToastStore } from '@/store/toast'
@@ -154,13 +154,15 @@ export default function AdminProductsPage() {
     if (selectedImageFile) {
       try {
         const compressed = await compressImageToThumbnail(selectedImageFile)
-        const blob = await (await fetch(compressed)).blob()
-        finalImage = await uploadImage(new File([blob], 'product.jpg', { type: 'image/jpeg' }))
+        finalImage = await uploadImage(await dataUrlToFile(compressed, selectedImageFile.name))
       } catch {
         try {
           finalImage = await uploadImage(selectedImageFile)
-        } catch {
-          showToast(language === 'tr' ? 'Resim yüklenemedi, placeholder kullanılacak' : language === 'it' ? 'Immagine non caricata, verrà usato un placeholder' : 'Image upload failed, placeholder will be used', 'warning')
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          showToast(language === 'tr' ? 'Resim yüklenemedi: ' + msg : language === 'it' ? 'Immagine non caricata: ' + msg : 'Image upload failed: ' + msg, 'error')
+          setSubmitting(false)
+          return
         }
       }
     }
@@ -224,17 +226,12 @@ export default function AdminProductsPage() {
     if (!file) return
     try {
       const compressed = await compressImage(file, { maxWidth: 400, maxHeight: 400, quality: 0.7 })
-      const url = await uploadImage(new File([compressed], 'category.jpg', { type: 'image/jpeg' }))
+      const url = await uploadImage(await dataUrlToFile(compressed, file.name))
       setCategoryImagePreview(url)
       setCategoryFormData({ ...categoryFormData, image: url })
-    } catch {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const result = event.target?.result as string
-        setCategoryImagePreview(result)
-        setCategoryFormData({ ...categoryFormData, image: result })
-      }
-      reader.readAsDataURL(file)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      showToast(language === 'tr' ? 'Kategori resmi yüklenemedi: ' + msg : language === 'it' ? 'Immagine categoria non caricata: ' + msg : 'Category image upload failed: ' + msg, 'error')
     }
   }
 

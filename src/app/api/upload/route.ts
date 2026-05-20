@@ -2,11 +2,18 @@ import { put } from '@vercel/blob'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json({ error: 'Blob storage is not configured' }, { status: 500 })
+  }
+
   const formData = await request.formData()
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+  if (!file.type.startsWith('image/')) {
+    return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 })
+  }
 
-  const ext = file.name.split('.').pop() || 'jpg'
+  const ext = file.type.split('/')[1] || file.name.split('.').pop() || 'jpg'
   const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`
 
   try {
