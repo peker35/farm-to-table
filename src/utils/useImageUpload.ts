@@ -20,5 +20,10 @@ export async function dataUrlToFile(dataUrl: string, filename: string): Promise<
 
 export async function deleteImage(url: string): Promise<void> {
   if (!url || url.startsWith('data:')) return
-  await fetch(`/api/upload?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+  const pathname = url.startsWith('/api/blob')
+    ? new URL(url, window.location.origin).searchParams.get('pathname')
+    : null
+  const target = pathname || url
+
+  await fetch(`/api/upload?url=${encodeURIComponent(target)}`, { method: 'DELETE' })
 }

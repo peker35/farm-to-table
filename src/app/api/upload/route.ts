@@ -17,8 +17,11 @@ export async function POST(request: Request) {
   const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`
 
   try {
-    const blob = await put(filename, file, { access: 'public' })
-    return NextResponse.json({ url: blob.url })
+    const blob = await put(filename, file, { access: 'private' })
+    return NextResponse.json({
+      url: `/api/blob?pathname=${encodeURIComponent(blob.pathname)}`,
+      pathname: blob.pathname,
+    })
   } catch (err) {
     console.error('Upload failed:', err)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
