@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import SafeImage from '@/components/SafeImage'
 import { compressImage } from '@/utils/compressImage'
 import { uploadImage, deleteImage } from '@/utils/useImageUpload'
@@ -54,25 +54,26 @@ export default function AdminProducersPage() {
     image: ''
   })
 
-  useEffect(() => {
-    api.farms.list().then(data => {
-      setFarms(data.map(transformFarm))
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
-
-  function trField(f: any, field: string): string {
+  const trField = useCallback((f: any, field: string): string => {
     const lang = language === 'tr' ? 'Tr' : language === 'it' ? 'It' : 'En'
     return f[field + lang] || f[field + 'En'] || f[field] || ''
-  }
-  function transformFarm(f: any): Farm {
+  }, [language])
+
+  const transformFarm = useCallback((f: any): Farm => {
     return {
       ...f,
       name: trField(f, 'name'),
       location: trField(f, 'location'),
       description: trField(f, 'description'),
     }
-  }
+  }, [trField])
+
+  useEffect(() => {
+    api.farms.list().then(data => {
+      setFarms(data.map(transformFarm))
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [transformFarm])
 
   const handleOpenModal = (farm?: Farm) => {
     if (farm) {

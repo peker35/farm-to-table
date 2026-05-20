@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import SafeImage from '@/components/SafeImage'
-import { compressImage } from '@/utils/compressImage'
+import { compressImage, compressImageToThumbnail } from '@/utils/compressImage'
 import { uploadImage, deleteImage } from '@/utils/useImageUpload'
 import { api } from '@/lib/api'
 import { useLanguageStore } from '@/store/language'
@@ -49,6 +49,7 @@ export default function AdminProductsPage() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [categoryImagePreview, setCategoryImagePreview] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const showToast = useToastStore(state => state.show)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const categoryFileInputRef = useRef<HTMLInputElement>(null)
@@ -63,6 +64,24 @@ export default function AdminProductsPage() {
   const [categoryFormData, setCategoryFormData] = useState({
     name: '', nameEn: '', nameIt: '', nameTr: '', image: ''
   })
+
+  const trField = useCallback((obj: any, field: string): string => {
+    const lang = language === 'tr' ? 'Tr' : language === 'it' ? 'It' : 'En'
+    return obj[field + lang] || obj[field + 'En'] || obj[field] || ''
+  }, [language])
+
+  const transformProduct = useCallback((p: any): Product => {
+    return {
+      ...p,
+      price: parseFloat(p.price),
+      name: trField(p, 'name'),
+      farm: trField(p, 'farm'),
+    }
+  }, [trField])
+
+  const transformCategory = useCallback((c: any): Category => {
+    return { ...c, name: trField(c, 'name') }
+  }, [trField])
 
   useEffect(() => {
     async function load() {
@@ -80,25 +99,7 @@ export default function AdminProductsPage() {
       }
     }
     load()
-  }, [])
-
-  function trField(obj: any, field: string): string {
-    const lang = language === 'tr' ? 'Tr' : language === 'it' ? 'It' : 'En'
-    return obj[field + lang] || obj[field + 'En'] || obj[field] || ''
-  }
-
-  function transformProduct(p: any): Product {
-    return {
-      ...p,
-      price: parseFloat(p.price),
-      name: trField(p, 'name'),
-      farm: trField(p, 'farm'),
-    }
-  }
-
-  function transformCategory(c: any): Category {
-    return { ...c, name: trField(c, 'name') }
-  }
+  }, [transformCategory, transformProduct])
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,6 +109,7 @@ export default function AdminProductsPage() {
   })
 
   const handleOpenModal = (product?: Product) => {
+    setSelectedImageFile(null)
     if (product) {
       setEditingProduct(product)
       setImagePreview(product.image)
@@ -128,16 +130,16 @@ export default function AdminProductsPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setSelectedImageFile(file)
     try {
-      const url = await uploadImage(file)
-      setImagePreview(url)
-      setFormData({ ...formData, image: url })
+      const compressed = await compressImageToThumbnail(file)
+      setImagePreview(compressed)
+      setFormData({ ...formData, image: compressed })
     } catch {
       const reader = new FileReader()
       reader.onload = (event) => {
-        const result = event.target?.result as string
-        setImagePreview(result)
-        setFormData({ ...formData, image: result })
+        setImagePreview(event.target?.result as string)
+        setFormData({ ...formData, image: event.target?.result as string })
       }
       reader.readAsDataURL(file)
     }
@@ -147,6 +149,22 @@ export default function AdminProductsPage() {
     e.preventDefault()
     if (submitting) return
     setSubmitting(true)
+
+    let finalImage = editingProduct ? (formData.image || '/placeholder.svg') : '/placeholder.svg'
+    if (selectedImageFile) {
+      try {
+        const compressed = await compressImageToThumbnail(selectedImageFile)
+        const blob = await (await fetch(compressed)).blob()
+        finalImage = await uploadImage(new File([blob], 'product.jpg', { type: 'image/jpeg' }))
+      } catch {
+        try {
+          finalImage = await uploadImage(selectedImageFile)
+        } catch {
+          showToast(language === 'tr' ? 'Resim yüklenemedi, placeholder kullanılacak' : language === 'it' ? 'Immagine non caricata, verrà usato un placeholder' : 'Image upload failed, placeholder will be used', 'warning')
+        }
+      }
+    }
+
     const data = {
       nameEn: formData.nameEn || formData.name,
       nameIt: formData.nameIt || formData.name,
@@ -156,7 +174,7 @@ export default function AdminProductsPage() {
       farmEn: formData.farmEn || formData.farm,
       farmIt: formData.farmIt || formData.farm,
       farmTr: formData.farmTr || formData.farm,
-      image: formData.image || imagePreview || '/placeholder.svg',
+      image: finalImage,
       inStock: formData.inStock,
     }
     try {
@@ -171,7 +189,8 @@ export default function AdminProductsPage() {
       showToast(editingProduct ? (language === 'tr' ? 'Ürün güncellendi' : language === 'it' ? 'Prodotto aggiornato' : 'Product updated') : (language === 'tr' ? 'Ürün eklendi' : language === 'it' ? 'Prodotto aggiunto' : 'Product added'), 'success')
     } catch (err) {
       console.error('Failed to save product', err)
-      showToast(language === 'tr' ? 'Hata: ' + (err as Error).message : language === 'it' ? 'Errore: ' + (err as Error).message : 'Error: ' + (err as Error).message, 'error')
+      const msg = err instanceof Error ? err.message : String(err)
+      showToast(language === 'tr' ? 'Hata: ' + msg : language === 'it' ? 'Errore: ' + msg : 'Error: ' + msg, 'error')
     }
     setSubmitting(false)
   }

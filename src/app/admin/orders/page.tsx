@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
 import { useLanguageStore } from '@/store/language'
 
@@ -39,11 +39,7 @@ export default function AdminOrdersPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
-  useEffect(() => {
-    loadOrders()
-  }, [])
-
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     try {
       const data = await api.orders.list()
       setOrders(data.map((o: any) => ({
@@ -56,7 +52,11 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadOrders()
+  }, [loadOrders])
 
   const filteredOrders = orders.filter(o => filterStatus === 'all' || o.status === filterStatus)
 

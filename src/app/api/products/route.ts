@@ -15,18 +15,22 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json()
-  const created = await db.insert(products).values({
-    nameEn: body.nameEn,
-    nameIt: body.nameIt,
-    nameTr: body.nameTr,
-    price: body.price.toString(),
-    category: body.category,
-    farmEn: body.farmEn,
-    farmIt: body.farmIt,
-    farmTr: body.farmTr,
-    image: body.image,
-    inStock: body.inStock,
-  }).returning()
-  return NextResponse.json(created[0], { status: 201 })
+  try {
+    const body = await request.json()
+    const created = await db.insert(products).values({
+      nameEn: body.nameEn,
+      nameIt: body.nameIt,
+      nameTr: body.nameTr,
+      price: body.price.toString(),
+      category: body.category,
+      farmEn: body.farmEn,
+      farmIt: body.farmIt,
+      farmTr: body.farmTr,
+      image: body.image,
+      inStock: body.inStock,
+    }).returning()
+    return NextResponse.json(created[0], { status: 201 })
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }

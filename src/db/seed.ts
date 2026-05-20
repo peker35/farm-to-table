@@ -37,6 +37,7 @@ async function seed() {
       inStock: prod.inStock,
     }).onConflictDoNothing()
   }
+  await sql`SELECT setval('products_id_seq', (SELECT MAX(id) FROM products))`
 
   console.log('Seeding farms...')
   for (const farm of seedFarms) {
@@ -54,6 +55,7 @@ async function seed() {
       image: farm.image,
     }).onConflictDoNothing()
   }
+  await sql`SELECT setval('farms_id_seq', (SELECT MAX(id) FROM farms))`
 
   console.log('Seeding events...')
   const initialEvents = [

@@ -15,25 +15,22 @@ interface ToastStore {
 }
 
 export const useToastStore = create<ToastStore>()(
-  persist(
-    (set, get) => ({
-      toasts: [],
-      show: (message, type = 'info') => {
-        const id = Date.now().toString()
-        set(state => ({
-          toasts: [...state.toasts, { id, message, type }]
-        }))
-        setTimeout(() => {
-          get().dismiss(id)
-        }, 3000)
-      },
-      dismiss: (id) => {
-        set(state => ({
-          toasts: state.toasts.filter(t => t.id !== id)
-        }))
-      },
-      clear: () => set({ toasts: [] })
-    }),
-    { name: 'toast-storage' }
-  )
+  (set, get) => ({
+    toasts: [],
+    show: (message, type = 'info') => {
+      const id = Date.now().toString()
+      set(state => ({
+        toasts: [...state.toasts, { id, message, type }]
+      }))
+      setTimeout(() => {
+        get().dismiss(id)
+      }, 3000)
+    },
+    dismiss: (id) => {
+      set(state => ({
+        toasts: state.toasts.filter(t => t.id !== id)
+      }))
+    },
+    clear: () => set({ toasts: [] })
+  })
 )

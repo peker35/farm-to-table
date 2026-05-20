@@ -26,6 +26,7 @@ export default function SafeImage({ src, alt, className = '', containerClassName
 
   return (
     <div className={`${fill ? 'relative w-full h-full' : ''} ${containerClassName}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}

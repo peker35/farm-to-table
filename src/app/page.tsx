@@ -172,7 +172,7 @@ export default function Home() {
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-md relative">
-              <div className="absolute -top-4 left-8 text-6xl text-primary/20">"</div>
+              <div className="absolute -top-4 left-8 text-6xl text-primary/20">&quot;</div>
               <div className="flex gap-1 mb-4">
                 {[1,2,3,4,5].map((i) => (
                   <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -197,7 +197,7 @@ export default function Home() {
             </div>
 
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-md relative">
-              <div className="absolute -top-4 left-8 text-6xl text-primary/20">"</div>
+              <div className="absolute -top-4 left-8 text-6xl text-primary/20">&quot;</div>
               <div className="flex gap-1 mb-4">
                 {[1,2,3,4,5].map((i) => (
                   <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -222,7 +222,7 @@ export default function Home() {
             </div>
 
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl shadow-md relative">
-              <div className="absolute -top-4 left-8 text-6xl text-primary/20">"</div>
+              <div className="absolute -top-4 left-8 text-6xl text-primary/20">&quot;</div>
               <div className="flex gap-1 mb-4">
                 {[1,2,3,4,5].map((i) => (
                   <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
