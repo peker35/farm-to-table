@@ -162,10 +162,10 @@ export default function AdminProductsPage() {
     try {
       if (editingProduct) {
         const updated = await api.products.update(editingProduct.id, data)
-        setProducts(products.map(p => p.id === editingProduct.id ? transformProduct(updated) : p))
+        setProducts(prev => prev.map(p => p.id === editingProduct!.id ? transformProduct(updated) : p))
       } else {
         const created = await api.products.create(data)
-        setProducts([...products, transformProduct(created)])
+        setProducts(prev => [...prev, transformProduct(created)])
       }
       setShowModal(false)
       showToast(editingProduct ? (language === 'tr' ? 'Ürün güncellendi' : language === 'it' ? 'Prodotto aggiornato' : 'Product updated') : (language === 'tr' ? 'Ürün eklendi' : language === 'it' ? 'Prodotto aggiunto' : 'Product added'), 'success')
