@@ -69,7 +69,7 @@ export default function AdminProductsPage() {
           api.categories.list(),
         ])
         setProducts(prods.map(transformProduct))
-        setCategories(cats)
+        setCategories(cats.map(transformCategory))
       } catch (err) {
         console.error('Failed to load data', err)
       } finally {
@@ -79,13 +79,22 @@ export default function AdminProductsPage() {
     load()
   }, [])
 
+  function trField(obj: any, field: string): string {
+    const lang = language === 'tr' ? 'Tr' : language === 'it' ? 'It' : 'En'
+    return obj[field + lang] || obj[field + 'En'] || obj[field] || ''
+  }
+
   function transformProduct(p: any): Product {
     return {
       ...p,
       price: parseFloat(p.price),
-      name: p.nameEn || '',
-      farm: p.farmEn || '',
+      name: trField(p, 'name'),
+      farm: trField(p, 'farm'),
     }
+  }
+
+  function transformCategory(c: any): Category {
+    return { ...c, name: trField(c, 'name') }
   }
 
   const filteredProducts = products.filter(p => {
@@ -100,9 +109,9 @@ export default function AdminProductsPage() {
       setEditingProduct(product)
       setImagePreview(product.image)
       setFormData({
-        name: product.name, nameEn: product.nameEn || '', nameIt: product.nameIt || '', nameTr: product.nameTr || '',
+        name: product.nameEn || product.name, nameEn: product.nameEn || '', nameIt: product.nameIt || '', nameTr: product.nameTr || '',
         price: product.price.toString(), category: product.category,
-        farm: product.farm, farmEn: product.farmEn || '', farmIt: product.farmIt || '', farmTr: product.farmTr || '',
+        farm: product.farmEn || product.farm, farmEn: product.farmEn || '', farmIt: product.farmIt || '', farmTr: product.farmTr || '',
         image: product.image, inStock: product.inStock
       })
     } else {
@@ -174,7 +183,7 @@ export default function AdminProductsPage() {
     if (category) {
       setEditingCategory(category)
       setCategoryImagePreview(category.image)
-      setCategoryFormData({ name: category.name, nameEn: category.nameEn, nameIt: category.nameIt, nameTr: category.nameTr, image: category.image })
+      setCategoryFormData({ name: category.nameEn || category.name, nameEn: category.nameEn || '', nameIt: category.nameIt || '', nameTr: category.nameTr || '', image: category.image })
     } else {
       setEditingCategory(null)
       setCategoryImagePreview('')
