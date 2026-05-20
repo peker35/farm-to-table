@@ -10,13 +10,17 @@ import LanguageSelector from './LanguageSelector'
 import { useSettingsStore } from '@/store/settings'
 
 export default function Header() {
-  const logoUrl = useSettingsStore(state => state.logoUrl)
+  const { logoUrl, brandName: customBrand } = useSettingsStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const { language } = useLanguageStore()
 
-  const brand = brandNames[language] || brandNames.en
+  const defaultBrand = brandNames[language] || brandNames.en
+  const brand = {
+    short: customBrand[language]?.substring(0, 2).toUpperCase() || defaultBrand.short,
+    full: customBrand[language] || defaultBrand.full,
+  }
   const navT = (key: string) => t('nav', key, language)
 
   useEffect(() => {

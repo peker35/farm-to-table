@@ -3,12 +3,18 @@
 import Link from 'next/link'
 import { categories, getCategoryName } from '@/data/products'
 import { useLanguageStore } from '@/store/language'
+import { useSettingsStore } from '@/store/settings'
 import { t, brandNames } from '@/data/translations'
 
 export default function Footer() {
   const { language } = useLanguageStore()
+  const customBrand = useSettingsStore(state => state.brandName)
   const f = (key: string) => t('footer', key, language)
-  const brand = brandNames[language]
+  const defaultBrand = brandNames[language]
+  const brand = {
+    short: customBrand[language]?.substring(0, 2).toUpperCase() || defaultBrand.short,
+    full: customBrand[language] || defaultBrand.full,
+  }
 
   return (
     <footer className="bg-gray-900 text-white">
