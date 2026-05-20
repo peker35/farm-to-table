@@ -40,11 +40,11 @@ export default function LoginPage() {
     }
 
     setLoading(true)
-    const success = await login(email, password)
+    const result = await login(email, password)
     setLoading(false)
 
-    if (success) {
-      showToast(language === 'tr' ? 'Giriş başarılı!' : language === 'it' ? 'Accesso effettuato!' : 'Logged in successfully!', 'success')
+    if (result.success) {
+      showToast(a('signIn'), 'success')
       router.push('/')
     } else {
       setErrors([{ field: 'password', message: a('invalidCredentials') }])
@@ -70,7 +70,7 @@ export default function LoginPage() {
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                   getErrorForField('email', errors) ? 'border-red-500 focus:ring-red-500/50' : 'focus:ring-primary/50'
                 }`}
-                placeholder="you@example.com"
+                  placeholder={a('emailPlaceholder')}
               />
               {getErrorForField('email', errors) && (
                 <p className="text-red-500 text-xs mt-1">{getErrorForField('email', errors)}</p>

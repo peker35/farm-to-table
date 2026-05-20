@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import LanguageSelector from '@/components/LanguageSelector'
 import { useLanguageStore } from '@/store/language'
+import { useAuthStore } from '@/store/auth'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { language } = useLanguageStore()
+  const { user, isAuthenticated, isAdmin } = useAuthStore()
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -41,14 +43,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return item.label
   }
 
+  if (!isAuthenticated || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white rounded-2xl shadow-md p-8 text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-4">
+            {language === 'tr' ? 'Yetki Gerekli' : language === 'it' ? 'Accesso Negato' : 'Access Denied'}
+          </h1>
+          <p className="text-gray-600 mb-6">
+            {language === 'tr' ? 'Bu sayfaya erişmek için admin hesabıyla giriş yapmalısınız.' : language === 'it' ? 'Devi accedere con un account amministratore per visualizzare questa pagina.' : 'You must log in with an admin account to access this page.'}
+          </p>
+          <Link href="/login" className="btn-primary inline-block">
+            {language === 'tr' ? 'Giriş Yap' : language === 'it' ? 'Accedi' : 'Log In'}
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
         <aside className="w-64 bg-white shadow-sm min-h-screen fixed">
-          <div className="p-6 border-b">
+          <div className="p-6 border-b flex items-center justify-between">
             <Link href="/admin" className="text-xl font-bold text-primary">
               Admin Panel
             </Link>
+            <button
+              onClick={() => useAuthStore.getState().logout()}
+              className="text-xs text-gray-500 hover:text-red-600"
+            >
+              {language === 'tr' ? 'Çıkış' : language === 'it' ? 'Esci' : 'Logout'}
+            </button>
           </div>
 
           <nav className="p-4">
@@ -71,9 +97,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
 
           <div className="p-4 border-t">
-            <div className="mb-4">
-              <LanguageSelector />
+            <div className="mb-2 text-sm text-gray-500">
+              {user?.name} ({user?.email})
             </div>
+            <LanguageSelector />
           </div>
 
           <div className="p-4 border-t mt-auto">

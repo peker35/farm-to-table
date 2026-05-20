@@ -1,66 +1,71 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-interface User {
-  id: string
+export interface User {
+  id: number
   email: string
   name: string
-  zipCode: string
+  role: string
+  zipCode?: string | null
+  phone?: string | null
+  status?: string
 }
 
 interface AuthStore {
   user: User | null
-  users: User[]
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<boolean>
-  register: (name: string, email: string, password: string, zipCode: string) => Promise<boolean>
+  isAdmin: boolean
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  register: (name: string, email: string, password: string, zipCode: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
 }
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
-      users: [
-        { id: '1', email: 'admin@f2p.com', name: 'Admin User', zipCode: '10001' },
-        { id: '2', email: 'john@example.com', name: 'John Doe', zipCode: '10002' },
-        { id: '3', email: 'jane@example.com', name: 'Jane Smith', zipCode: '10003' },
-      ],
       isAuthenticated: false,
+      isAdmin: false,
 
       login: async (email: string, password: string) => {
-        if (email && password) {
-          const user: User = {
-            id: '1',
-            email,
-            name: email.split('@')[0],
-            zipCode: '10001'
-          }
-          set({ user, isAuthenticated: true })
-          return true
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          })
+          const data = await res.json()
+          if (!res.ok) return { success: false, error: data.error || 'Login failed' }
+          const user = data.user as User
+          set({ user, isAuthenticated: true, isAdmin: user.role === 'admin' })
+          return { success: true }
+        } catch {
+          return { success: false, error: 'Network error' }
         }
-        return false
       },
 
       register: async (name: string, email: string, password: string, zipCode: string) => {
-        if (name && email && password && zipCode) {
-          const users = get().users
-          const newUser: User = {
-            id: String(users.length + 1),
-            email,
-            name,
-            zipCode
-          }
-          set({ users: [...users, newUser], user: newUser, isAuthenticated: true })
-          return true
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, zipCode }),
+          })
+          const data = await res.json()
+          if (!res.ok) return { success: false, error: data.error || 'Registration failed' }
+          const user = data.user as User
+          set({ user, isAuthenticated: true, isAdmin: user.role === 'admin' })
+          return { success: true }
+        } catch {
+          return { success: false, error: 'Network error' }
         }
-        return false
       },
 
-      logout: () => set({ user: null, isAuthenticated: false }),
+      logout: () => set({ user: null, isAuthenticated: false, isAdmin: false }),
     }),
     {
       name: 'farm-auth',
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated, isAdmin: state.isAdmin }),
     }
   )
 )

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useProductsStore } from '@/store/products'
+import { useState, useRef, useEffect } from 'react'
 import SafeImage from '@/components/SafeImage'
-import { compressImage, compressImageToThumbnail } from '@/utils/compressImage'
+import { compressImage } from '@/utils/compressImage'
 import { uploadImage, deleteImage } from '@/utils/useImageUpload'
+import { api } from '@/lib/api'
+import { useLanguageStore } from '@/store/language'
+import { t } from '@/data/translations'
 
 interface Category {
   slug: string
@@ -32,7 +34,11 @@ interface Product {
 }
 
 export default function AdminProductsPage() {
-  const { products, categories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } = useProductsStore()
+  const { language } = useLanguageStore()
+  const tr = (key: string) => t('admin', key, language)
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -45,31 +51,46 @@ export default function AdminProductsPage() {
   const categoryFileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState({
-    name: '',
-    nameEn: '',
-    nameIt: '',
-    nameTr: '',
-    price: '',
-    category: 'produce',
-    farm: '',
-    farmEn: '',
-    farmIt: '',
-    farmTr: '',
-    image: '',
-    inStock: true
+    name: '', nameEn: '', nameIt: '', nameTr: '',
+    price: '', category: 'produce',
+    farm: '', farmEn: '', farmIt: '', farmTr: '',
+    image: '', inStock: true
   })
 
   const [categoryFormData, setCategoryFormData] = useState({
-    name: '',
-    nameEn: '',
-    nameIt: '',
-    nameTr: '',
-    image: ''
+    name: '', nameEn: '', nameIt: '', nameTr: '', image: ''
   })
 
+  useEffect(() => {
+    async function load() {
+      try {
+        const [prods, cats] = await Promise.all([
+          api.products.list(),
+          api.categories.list(),
+        ])
+        setProducts(prods.map(transformProduct))
+        setCategories(cats)
+      } catch (err) {
+        console.error('Failed to load data', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  function transformProduct(p: any): Product {
+    return {
+      ...p,
+      price: parseFloat(p.price),
+      name: p.nameEn || '',
+      farm: p.farmEn || '',
+    }
+  }
+
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name?.toLowerCase().includes(search.toLowerCase()) || 
-                       p.nameEn?.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.nameEn?.toLowerCase().includes(search.toLowerCase())
     const matchesCategory = filterCategory === 'all' || p.category === filterCategory
     return matchesSearch && matchesCategory
   })
@@ -79,28 +100,15 @@ export default function AdminProductsPage() {
       setEditingProduct(product)
       setImagePreview(product.image)
       setFormData({
-        name: product.name,
-        nameEn: product.nameEn || '',
-        nameIt: product.nameIt || '',
-        nameTr: product.nameTr || '',
-        price: product.price.toString(),
-        category: product.category,
-        farm: product.farm,
-        farmEn: product.farmEn || '',
-        farmIt: product.farmIt || '',
-        farmTr: product.farmTr || '',
-        image: product.image,
-        inStock: product.inStock
+        name: product.name, nameEn: product.nameEn || '', nameIt: product.nameIt || '', nameTr: product.nameTr || '',
+        price: product.price.toString(), category: product.category,
+        farm: product.farm, farmEn: product.farmEn || '', farmIt: product.farmIt || '', farmTr: product.farmTr || '',
+        image: product.image, inStock: product.inStock
       })
     } else {
       setEditingProduct(null)
       setImagePreview('')
-      setFormData({ 
-        name: '', nameEn: '', nameIt: '', nameTr: '', 
-        price: '', category: 'produce', farm: '', 
-        farmEn: '', farmIt: '', farmTr: '', 
-        image: '', inStock: true 
-      })
+      setFormData({ name: '', nameEn: '', nameIt: '', nameTr: '', price: '', category: 'produce', farm: '', farmEn: '', farmIt: '', farmTr: '', image: '', inStock: true })
     }
     setShowModal(true)
   }
@@ -123,30 +131,42 @@ export default function AdminProductsPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    const productData = {
-      ...formData,
+    const data = {
+      nameEn: formData.nameEn || formData.name,
+      nameIt: formData.nameIt || formData.name,
+      nameTr: formData.nameTr || formData.name,
       price: parseFloat(formData.price) || 0,
-      image: formData.image || imagePreview || '/placeholder.svg'
+      category: formData.category,
+      farmEn: formData.farmEn || formData.farm,
+      farmIt: formData.farmIt || formData.farm,
+      farmTr: formData.farmTr || formData.farm,
+      image: formData.image || imagePreview || '/placeholder.svg',
+      inStock: formData.inStock,
     }
-
-    if (editingProduct) {
-      updateProduct(editingProduct.id, productData)
-    } else {
-      const newProduct: Product = {
-        ...productData,
-        id: Date.now(),
+    try {
+      if (editingProduct) {
+        const updated = await api.products.update(editingProduct.id, data)
+        setProducts(products.map(p => p.id === editingProduct.id ? transformProduct(updated) : p))
+      } else {
+        const created = await api.products.create(data)
+        setProducts([...products, transformProduct(created)])
       }
-      addProduct(newProduct)
+    } catch (err) {
+      console.error('Failed to save product', err)
     }
     setShowModal(false)
   }
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      deleteProduct(id)
+  const handleDelete = async (id: number) => {
+    if (confirm(tr('confirmDelete'))) {
+      try {
+        await api.products.delete(id)
+        setProducts(products.filter(p => p.id !== id))
+      } catch (err) {
+        console.error('Failed to delete product', err)
+      }
     }
   }
 
@@ -154,23 +174,11 @@ export default function AdminProductsPage() {
     if (category) {
       setEditingCategory(category)
       setCategoryImagePreview(category.image)
-      setCategoryFormData({
-        name: category.name,
-        nameEn: category.nameEn,
-        nameIt: category.nameIt,
-        nameTr: category.nameTr,
-        image: category.image
-      })
+      setCategoryFormData({ name: category.name, nameEn: category.nameEn, nameIt: category.nameIt, nameTr: category.nameTr, image: category.image })
     } else {
       setEditingCategory(null)
       setCategoryImagePreview('')
-      setCategoryFormData({
-        name: '',
-        nameEn: '',
-        nameIt: '',
-        nameTr: '',
-        image: ''
-      })
+      setCategoryFormData({ name: '', nameEn: '', nameIt: '', nameTr: '', image: '' })
     }
     setShowCategoryModal(true)
   }
@@ -194,53 +202,59 @@ export default function AdminProductsPage() {
     }
   }
 
-  const handleCategorySubmit = (e: React.FormEvent) => {
+  const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const slug = categoryFormData.name.toLowerCase().replace(/\s+/g, '-')
-    const categoryData = {
-      ...categoryFormData,
-      image: categoryFormData.image || categoryImagePreview || 'https://via.placeholder.com/400'
+    const data = {
+      slug,
+      nameEn: categoryFormData.nameEn || categoryFormData.name,
+      nameIt: categoryFormData.nameIt || categoryFormData.name,
+      nameTr: categoryFormData.nameTr || categoryFormData.name,
+      image: categoryFormData.image || categoryImagePreview || 'https://via.placeholder.com/400',
     }
-
-    if (editingCategory) {
-      updateCategory(editingCategory.slug, categoryData)
-    } else {
-      const newCategory: Category = {
-        ...categoryData,
-        slug
+    try {
+      if (editingCategory) {
+        const updated = await api.categories.update(editingCategory.slug, data)
+        setCategories(categories.map(c => c.slug === editingCategory.slug ? updated : c))
+      } else {
+        const created = await api.categories.create(data)
+        setCategories([...categories, created])
       }
-      addCategory(newCategory)
+    } catch (err) {
+      console.error('Failed to save category', err)
     }
     setShowCategoryModal(false)
   }
 
-  const handleDeleteCategory = (slug: string) => {
+  const handleDeleteCategory = async (slug: string) => {
     if (confirm('Are you sure you want to delete this category?')) {
-      deleteCategory(slug)
+      try {
+        await api.categories.delete(slug)
+        setCategories(categories.filter(c => c.slug !== slug))
+      } catch (err) {
+        console.error('Failed to delete category', err)
+      }
     }
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Products</h1>
-          <p className="text-gray-600">Manage your product inventory</p>
+          <h1 className="text-2xl font-bold">{tr('products')}</h1>
+          <p className="text-gray-600">{tr('manageProducts')}</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="btn-primary">
-          + Add Product
-        </button>
+        <button onClick={() => handleOpenModal()} className="btn-primary">{tr('addNew')}</button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Categories</h2>
-          <button 
-            onClick={() => handleOpenCategoryModal()} 
-            className="text-sm px-3 py-1 border rounded-lg hover:bg-gray-50"
-          >
-            + Add Category
-          </button>
+          <h2 className="text-lg font-semibold">{language === 'tr' ? 'Kategoriler' : language === 'it' ? 'Categorie' : 'Categories'}</h2>
+          <button onClick={() => handleOpenCategoryModal()} className="text-sm px-3 py-1 border rounded-lg hover:bg-gray-50">{language === 'tr' ? '+ Kategori Ekle' : language === 'it' ? '+ Aggiungi Categoria' : '+ Add Category'}</button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {categories.map((cat) => (
@@ -250,18 +264,8 @@ export default function AdminProductsPage() {
               </div>
               <h3 className="font-medium text-sm truncate">{cat.name}</h3>
               <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-3 left-3 right-3">
-                <button
-                  onClick={() => handleOpenCategoryModal(cat)}
-                  className="flex-1 text-xs py-1 bg-gray-100 rounded hover:bg-gray-200"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteCategory(cat.slug)}
-                  className="flex-1 text-xs py-1 text-red-600 bg-red-50 rounded hover:bg-red-100"
-                >
-                  Delete
-                </button>
+                <button onClick={() => handleOpenCategoryModal(cat)} className="flex-1 text-xs py-1 bg-gray-100 rounded hover:bg-gray-200">{tr('edit')}</button>
+                <button onClick={() => handleDeleteCategory(cat.slug)} className="flex-1 text-xs py-1 text-red-600 bg-red-50 rounded hover:bg-red-100">{tr('delete')}</button>
               </div>
             </div>
           ))}
@@ -269,22 +273,10 @@ export default function AdminProductsPage() {
       </div>
 
       <div className="flex gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-lg"
-        />
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
-        >
-          <option value="all">All Categories</option>
-          {categories.map(cat => (
-            <option key={cat.slug} value={cat.slug}>{cat.name}</option>
-          ))}
+        <input type="text" placeholder={tr('search')} value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 px-4 py-2 border rounded-lg" />
+        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="px-4 py-2 border rounded-lg">
+          <option value="all">{language === 'tr' ? 'Tüm Kategoriler' : language === 'it' ? 'Tutte le Categorie' : 'All Categories'}</option>
+          {categories.map(cat => (<option key={cat.slug} value={cat.slug}>{cat.name}</option>))}
         </select>
       </div>
 
@@ -298,18 +290,8 @@ export default function AdminProductsPage() {
               <h3 className="font-medium text-sm truncate">{product.name}</h3>
               <p className="text-xs text-gray-500">${product.price}</p>
               <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => handleOpenModal(product)}
-                  className="flex-1 text-xs py-1 bg-gray-100 rounded hover:bg-gray-200"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(product.id)}
-                  className="flex-1 text-xs py-1 text-red-600 bg-red-50 rounded hover:bg-red-100"
-                >
-                  Delete
-                </button>
+                <button onClick={() => handleOpenModal(product)} className="flex-1 text-xs py-1 bg-gray-100 rounded hover:bg-gray-200">{tr('edit')}</button>
+                <button onClick={() => handleDelete(product.id)} className="flex-1 text-xs py-1 text-red-600 bg-red-50 rounded hover:bg-red-100">{tr('delete')}</button>
               </div>
             </div>
           ))}
@@ -317,17 +299,10 @@ export default function AdminProductsPage() {
       </div>
 
       {showModal && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 overflow-y-auto"
-          onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
-        >
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto my-8">
-            <h2 className="text-xl font-bold mb-4">
-              {editingProduct ? 'Edit Product' : 'Add New Product'}
-            </h2>
+            <h2 className="text-xl font-bold mb-4">{editingProduct ? tr('editProduct') : tr('addProduct')}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              
-              {/* Image Upload */}
               <div>
                 <label className="block text-sm font-medium mb-2">Product Image</label>
                 <div className="flex gap-4 items-start">
@@ -335,23 +310,9 @@ export default function AdminProductsPage() {
                     <SafeImage src={imagePreview || formData.image} alt="Preview" fill />
                   </div>
                   <div className="flex-1">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-2 border border-dashed rounded-lg text-sm text-gray-500 hover:bg-gray-50"
-                    >
-                      Click to upload image
-                    </button>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Supports: JPG, PNG, WebP
-                    </p>
+                    <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full py-2 border border-dashed rounded-lg text-sm text-gray-500 hover:bg-gray-50">Click to upload image</button>
+                    <p className="text-xs text-gray-400 mt-1">Supports: JPG, PNG, WebP</p>
                   </div>
                 </div>
               </div>
@@ -359,59 +320,27 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-3">
                   <label className="block text-sm font-medium mb-1">Product Name (EN)</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Product name in English"
-                  />
+                  <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2 border rounded-lg" placeholder="Product name in English" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Name (TR)</label>
-                  <input
-                    type="text"
-                    value={formData.nameTr}
-                    onChange={(e) => setFormData({...formData, nameTr: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Türkçe isim"
-                  />
+                  <input type="text" value={formData.nameTr} onChange={(e) => setFormData({...formData, nameTr: e.target.value})} className="w-full px-4 py-2 border rounded-lg" placeholder="Türkçe isim" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Name (IT)</label>
-                  <input
-                    type="text"
-                    value={formData.nameIt}
-                    onChange={(e) => setFormData({...formData, nameIt: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Nome italiano"
-                  />
+                  <input type="text" value={formData.nameIt} onChange={(e) => setFormData({...formData, nameIt: e.target.value})} className="w-full px-4 py-2 border rounded-lg" placeholder="Nome italiano" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Price ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
+                  <input type="number" step="0.01" required value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Category</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                  >
-                    {categories.map(cat => (
-                      <option key={cat.slug} value={cat.slug}>{cat.name}</option>
-                    ))}
+                  <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-4 py-2 border rounded-lg">
+                    {categories.map(cat => (<option key={cat.slug} value={cat.slug}>{cat.name}</option>))}
                   </select>
                 </div>
               </div>
@@ -419,54 +348,28 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-3">
                   <label className="block text-sm font-medium mb-1">Farm Name (EN)</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.farm}
-                    onChange={(e) => setFormData({...formData, farm: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Farm name"
-                  />
+                  <input type="text" required value={formData.farm} onChange={(e) => setFormData({...formData, farm: e.target.value})} className="w-full px-4 py-2 border rounded-lg" placeholder="Farm name" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Farm (TR)</label>
-                  <input
-                    type="text"
-                    value={formData.farmTr}
-                    onChange={(e) => setFormData({...formData, farmTr: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
+                  <input type="text" value={formData.farmTr} onChange={(e) => setFormData({...formData, farmTr: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Farm (IT)</label>
-                  <input
-                    type="text"
-                    value={formData.farmIt}
-                    onChange={(e) => setFormData({...formData, farmIt: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
+                  <input type="text" value={formData.farmIt} onChange={(e) => setFormData({...formData, farmIt: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
                 </div>
               </div>
 
               <div>
                 <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.inStock}
-                    onChange={(e) => setFormData({...formData, inStock: e.target.checked})}
-                    className="rounded"
-                  />
-                  <span>In Stock</span>
+                  <input type="checkbox" checked={formData.inStock} onChange={(e) => setFormData({...formData, inStock: e.target.checked})} className="rounded" />
+                  <span>{tr('inStock')}</span>
                 </label>
               </div>
 
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 border rounded-lg">
-                  Cancel
-                </button>
-                <button type="submit" className="flex-1 btn-primary">
-                  {editingProduct ? 'Save Changes' : 'Add Product'}
-                </button>
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 border rounded-lg">{tr('cancel')}</button>
+                <button type="submit" className="flex-1 btn-primary">{editingProduct ? tr('save') : tr('addProduct')}</button>
               </div>
             </form>
           </div>
@@ -474,14 +377,9 @@ export default function AdminProductsPage() {
       )}
 
       {showCategoryModal && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 overflow-y-auto"
-          onClick={(e) => e.target === e.currentTarget && setShowCategoryModal(false)}
-        >
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && setShowCategoryModal(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto my-8">
-            <h2 className="text-xl font-bold mb-4">
-              {editingCategory ? 'Edit Category' : 'Add New Category'}
-            </h2>
+            <h2 className="text-xl font-bold mb-4">{editingCategory ? tr('editCategory') : tr('addCategory')}</h2>
             <form onSubmit={handleCategorySubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Category Image</label>
@@ -490,20 +388,8 @@ export default function AdminProductsPage() {
                     <SafeImage src={categoryImagePreview || categoryFormData.image} alt="Preview" fill />
                   </div>
                   <div className="flex-1">
-                    <input
-                      type="file"
-                      ref={categoryFileInputRef}
-                      accept="image/*"
-                      onChange={handleCategoryImageUpload}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => categoryFileInputRef.current?.click()}
-                      className="w-full py-2 border border-dashed rounded-lg text-sm text-gray-500 hover:bg-gray-50"
-                    >
-                      Click to upload
-                    </button>
+                    <input type="file" ref={categoryFileInputRef} accept="image/*" onChange={handleCategoryImageUpload} className="hidden" />
+                    <button type="button" onClick={() => categoryFileInputRef.current?.click()} className="w-full py-2 border border-dashed rounded-lg text-sm text-gray-500 hover:bg-gray-50">Click to upload</button>
                   </div>
                 </div>
               </div>
@@ -511,44 +397,21 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-3">
                   <label className="block text-sm font-medium mb-1">Category Name (EN)</label>
-                  <input
-                    type="text"
-                    required
-                    value={categoryFormData.name}
-                    onChange={(e) => setCategoryFormData({...categoryFormData, name: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Category name in English"
-                  />
+                  <input type="text" required value={categoryFormData.name} onChange={(e) => setCategoryFormData({...categoryFormData, name: e.target.value})} className="w-full px-4 py-2 border rounded-lg" placeholder="Category name in English" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Name (TR)</label>
-                  <input
-                    type="text"
-                    value={categoryFormData.nameTr}
-                    onChange={(e) => setCategoryFormData({...categoryFormData, nameTr: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Türkçe isim"
-                  />
+                  <input type="text" value={categoryFormData.nameTr} onChange={(e) => setCategoryFormData({...categoryFormData, nameTr: e.target.value})} className="w-full px-4 py-2 border rounded-lg" placeholder="Türkçe isim" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Name (IT)</label>
-                  <input
-                    type="text"
-                    value={categoryFormData.nameIt}
-                    onChange={(e) => setCategoryFormData({...categoryFormData, nameIt: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    placeholder="Nome italiano"
-                  />
+                  <input type="text" value={categoryFormData.nameIt} onChange={(e) => setCategoryFormData({...categoryFormData, nameIt: e.target.value})} className="w-full px-4 py-2 border rounded-lg" placeholder="Nome italiano" />
                 </div>
               </div>
 
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowCategoryModal(false)} className="flex-1 py-2 border rounded-lg">
-                  Cancel
-                </button>
-                <button type="submit" className="flex-1 btn-primary">
-                  {editingCategory ? 'Save Changes' : 'Add Category'}
-                </button>
+                <button type="button" onClick={() => setShowCategoryModal(false)} className="flex-1 py-2 border rounded-lg">{tr('cancel')}</button>
+                <button type="submit" className="flex-1 btn-primary">{editingCategory ? tr('save') : tr('addCategory')}</button>
               </div>
             </form>
           </div>

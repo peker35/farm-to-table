@@ -62,10 +62,8 @@ export default function CheckoutPage() {
     return (
       <div className="pt-24 pb-16">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-          <Link href="/shop" className="btn-primary inline-block">
-            Start Shopping
-          </Link>
+          <h1 className="text-2xl font-bold mb-4">{t('cart', 'empty', language)}</h1>
+          <Link href="/shop" className="btn-primary inline-block">{t('cart', 'startShopping', language)}</Link>
         </div>
       </div>
     )
@@ -80,12 +78,10 @@ export default function CheckoutPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold mb-4">Order Confirmed!</h1>
-          <p className="text-gray-600 mb-2">Thank you for your order.</p>
-          <p className="text-gray-600 mb-8">You will receive a confirmation email shortly.</p>
-          <Link href="/shop" className="btn-primary">
-            Continue Shopping
-          </Link>
+          <h1 className="text-3xl font-bold mb-4">{a('orderConfirmed')}</h1>
+          <p className="text-gray-600 mb-2">{a('thankYou')}</p>
+          <p className="text-gray-600 mb-8">{a('confirmationEmail')}</p>
+          <Link href="/shop" className="btn-primary">{a('continueShopping')}</Link>
         </div>
       </div>
     )
@@ -94,7 +90,7 @@ export default function CheckoutPage() {
   return (
     <div className="pt-24 pb-16">
       <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold mb-8">{a('checkout')}</h1>
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Form */}
@@ -226,21 +222,16 @@ export default function CheckoutPage() {
           {/* Order Summary */}
           <div>
             <div className="bg-gray-50 p-6 rounded-xl sticky top-24">
-              <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+              <h2 className="text-xl font-bold mb-4">{t('cart', 'orderSummary', language)}</h2>
               <div className="space-y-4 max-h-64 overflow-y-auto">
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-3">
                     <div className="w-16 h-16 relative rounded-lg overflow-hidden flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
+                      <Image src={item.image} alt={item.name} fill className="object-cover" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                      <p className="text-sm text-gray-500">{t('account', 'qty', language)}: {item.quantity}</p>
                     </div>
                     <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
                   </div>
@@ -249,16 +240,16 @@ export default function CheckoutPage() {
               <hr className="my-4 border-gray-300" />
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>Subtotal</span>
+                  <span>{t('cart', 'subtotal', language)}</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Delivery</span>
-                  <span className="text-green-600">Free</span>
+                  <span>{t('cart', 'delivery', language)}</span>
+                  <span className="text-green-600">{t('cart', 'free', language)}</span>
                 </div>
                 <hr className="border-gray-300" />
                 <div className="flex justify-between text-xl font-bold">
-                  <span>Total</span>
+                  <span>{t('cart', 'total', language)}</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
               </div>

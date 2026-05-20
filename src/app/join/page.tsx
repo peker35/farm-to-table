@@ -45,14 +45,14 @@ export default function JoinPage() {
     }
 
     setLoading(true)
-    const success = await register(name, email, password, zipCode)
+    const result = await register(name, email, password, zipCode)
     setLoading(false)
 
-    if (success) {
-      showToast(language === 'tr' ? 'Hesap oluşturuldu!' : language === 'it' ? 'Account creato!' : 'Account created!', 'success')
+    if (result.success) {
+      showToast(a('createAccount'), 'success')
       router.push('/')
     } else {
-      setErrors([{ field: 'email', message: language === 'tr' ? 'Bu e-posta zaten kullanılıyor' : language === 'it' ? 'Email già in uso' : 'Email already in use' }])
+      setErrors([{ field: 'email', message: result.error || a('emailInUse') }])
     }
   }
 
@@ -76,7 +76,7 @@ export default function JoinPage() {
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                   getErrorForField('name', errors) ? 'border-red-500 focus:ring-red-500/50' : 'focus:ring-primary/50'
                 }`}
-                placeholder="John Doe"
+                placeholder={a('fullName')}
               />
               {getErrorForField('name', errors) && (
                 <p className="text-red-500 text-xs mt-1">{getErrorForField('name', errors)}</p>
@@ -92,7 +92,7 @@ export default function JoinPage() {
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                   getErrorForField('email', errors) ? 'border-red-500 focus:ring-red-500/50' : 'focus:ring-primary/50'
                 }`}
-                placeholder="you@example.com"
+                placeholder={a('emailPlaceholder')}
               />
               {getErrorForField('email', errors) && (
                 <p className="text-red-500 text-xs mt-1">{getErrorForField('email', errors)}</p>
@@ -116,9 +116,7 @@ export default function JoinPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                {language === 'tr' ? 'Şifre Onayla' : language === 'it' ? 'Conferma Password' : 'Confirm Password'}
-              </label>
+              <label className="block text-sm font-medium mb-1">{a('confirmPassword')}</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -164,7 +162,7 @@ export default function JoinPage() {
           <div className="mt-6 text-center text-sm text-gray-600">
             {a('alreadyHaveAccount')}{' '}
             <Link href="/login" className="text-primary hover:underline font-medium">
-              {language === 'tr' ? 'Giriş yap' : language === 'it' ? 'Accedi' : 'Sign in'}
+              {a('signIn')}
             </Link>
           </div>
         </div>
