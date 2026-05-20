@@ -6,6 +6,7 @@ import { compressImage } from '@/utils/compressImage'
 import { uploadImage, deleteImage } from '@/utils/useImageUpload'
 import { api } from '@/lib/api'
 import { useLanguageStore } from '@/store/language'
+import { useToastStore } from '@/store/toast'
 import { t } from '@/data/translations'
 
 interface Category {
@@ -47,6 +48,8 @@ export default function AdminProductsPage() {
   const [filterCategory, setFilterCategory] = useState('all')
   const [imagePreview, setImagePreview] = useState<string>('')
   const [categoryImagePreview, setCategoryImagePreview] = useState<string>('')
+  const [submitting, setSubmitting] = useState(false)
+  const showToast = useToastStore(state => state.show)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const categoryFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -142,6 +145,8 @@ export default function AdminProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
     const data = {
       nameEn: formData.nameEn || formData.name,
       nameIt: formData.nameIt || formData.name,
@@ -162,10 +167,13 @@ export default function AdminProductsPage() {
         const created = await api.products.create(data)
         setProducts([...products, transformProduct(created)])
       }
+      setShowModal(false)
+      showToast(editingProduct ? (language === 'tr' ? 'Ürün güncellendi' : language === 'it' ? 'Prodotto aggiornato' : 'Product updated') : (language === 'tr' ? 'Ürün eklendi' : language === 'it' ? 'Prodotto aggiunto' : 'Product added'), 'success')
     } catch (err) {
       console.error('Failed to save product', err)
+      showToast(language === 'tr' ? 'Hata: ' + (err as Error).message : language === 'it' ? 'Errore: ' + (err as Error).message : 'Error: ' + (err as Error).message, 'error')
     }
-    setShowModal(false)
+    setSubmitting(false)
   }
 
   const handleDelete = async (id: number) => {
@@ -213,7 +221,9 @@ export default function AdminProductsPage() {
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const slug = categoryFormData.name.toLowerCase().replace(/\s+/g, '-')
+    if (submitting) return
+    setSubmitting(true)
+    const slug = (categoryFormData.nameEn || categoryFormData.name).toLowerCase().replace(/\s+/g, '-')
     const data = {
       slug,
       nameEn: categoryFormData.nameEn || categoryFormData.name,
@@ -229,10 +239,13 @@ export default function AdminProductsPage() {
         const created = await api.categories.create(data)
         setCategories([...categories, created])
       }
+      setShowCategoryModal(false)
+      showToast(editingCategory ? (language === 'tr' ? 'Kategori güncellendi' : language === 'it' ? 'Categoria aggiornata' : 'Category updated') : (language === 'tr' ? 'Kategori eklendi' : language === 'it' ? 'Categoria aggiunta' : 'Category added'), 'success')
     } catch (err) {
       console.error('Failed to save category', err)
+      showToast(language === 'tr' ? 'Hata: ' + (err as Error).message : language === 'it' ? 'Errore: ' + (err as Error).message : 'Error: ' + (err as Error).message, 'error')
     }
-    setShowCategoryModal(false)
+    setSubmitting(false)
   }
 
   const handleDeleteCategory = async (slug: string) => {
@@ -378,7 +391,7 @@ export default function AdminProductsPage() {
 
               <div className="flex gap-4 pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2 border rounded-lg">{tr('cancel')}</button>
-                <button type="submit" className="flex-1 btn-primary">{editingProduct ? tr('save') : tr('addProduct')}</button>
+                <button type="submit" disabled={submitting} className="flex-1 btn-primary disabled:opacity-50">{submitting ? (language === 'tr' ? 'Kaydediliyor...' : language === 'it' ? 'Salvataggio...' : 'Saving...') : (editingProduct ? tr('save') : tr('addProduct'))}</button>
               </div>
             </form>
           </div>
