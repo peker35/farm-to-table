@@ -6,6 +6,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'cdn.sanity.io' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'via.placeholder.com' },
+      { protocol: 'https', hostname: '**.public.blob.vercel-storage.com' },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,

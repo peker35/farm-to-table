@@ -1,10 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useLanguageStore } from '@/store/language'
 import { api } from '@/lib/api'
+import SafeImage from '@/components/SafeImage'
 
 interface CategoryPageProps {
   params: { category: string }
@@ -64,7 +64,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             <Link key={product.id} href={`/shop/${product.category}/${product.id}`} className="group">
               <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
                 <div className="relative h-64">
-                  <Image src={product.image} alt={getName(product, language, 'name')} fill className="object-cover group-hover:scale-105 transition-transform" />
+                  <SafeImage src={product.image} alt={getName(product, language, 'name')} fill className="object-cover group-hover:scale-105 transition-transform" />
                   {!product.inStock && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><span className="text-white font-bold text-lg">{language === 'tr' ? 'Tükendi' : language === 'it' ? 'Esaurito' : 'Sold Out'}</span></div>}
                 </div>
                 <div className="p-4">
