@@ -15,8 +15,8 @@ interface AuthStore {
   user: User | null
   isAuthenticated: boolean
   isAdmin: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  register: (name: string, email: string, password: string, zipCode: string) => Promise<{ success: boolean; error?: string }>
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>
+  register: (name: string, email: string, password: string, zipCode: string) => Promise<{ success: boolean; user?: User; error?: string }>
   logout: () => void
 }
 
@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthStore>()(
           if (!res.ok) return { success: false, error: data.error || 'Login failed' }
           const user = data.user as User
           set({ user, isAuthenticated: true, isAdmin: user.role === 'admin' })
-          return { success: true }
+          return { success: true, user }
         } catch {
           return { success: false, error: 'Network error' }
         }
@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthStore>()(
           if (!res.ok) return { success: false, error: data.error || 'Registration failed' }
           const user = data.user as User
           set({ user, isAuthenticated: true, isAdmin: user.role === 'admin' })
-          return { success: true }
+          return { success: true, user }
         } catch {
           return { success: false, error: 'Network error' }
         }

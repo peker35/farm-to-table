@@ -45,7 +45,7 @@ export default function LoginPage() {
 
     if (result.success) {
       showToast(a('signIn'), 'success')
-      router.push('/')
+      router.push(result.user?.role === 'admin' ? '/admin' : '/')
     } else {
       setErrors([{ field: 'password', message: a('invalidCredentials') }])
     }
