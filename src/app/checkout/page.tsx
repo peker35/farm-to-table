@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useCartStore } from '@/store/cart'
@@ -8,6 +7,7 @@ import { useLanguageStore } from '@/store/language'
 import { t } from '@/data/translations'
 import { validate, getErrorForField, ValidationError } from '@/utils/validation'
 import { useToastStore } from '@/store/toast'
+import SafeImage from '@/components/SafeImage'
 
 export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCartStore()
@@ -227,7 +227,7 @@ export default function CheckoutPage() {
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-3">
                     <div className="w-16 h-16 relative rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={item.image} alt={item.name} fill className="object-cover" />
+                      <SafeImage src={item.image} alt={item.name} fill className="object-cover" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{item.name}</p>

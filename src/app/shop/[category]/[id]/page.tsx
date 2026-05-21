@@ -2,15 +2,12 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import { useCartStore } from '@/store/cart'
 import { useLanguageStore } from '@/store/language'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import SafeImage from '@/components/SafeImage'
-
-interface ProductPageProps {
-  params: { category: string; id: string }
-}
 
 function getName(item: any, lang: string, field: string) {
   if (lang === 'tr' && item[field + 'Tr']) return item[field + 'Tr']
@@ -18,7 +15,9 @@ function getName(item: any, lang: string, field: string) {
   return item[field + 'En'] || item[field] || ''
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
+export default function ProductPage() {
+  const params = useParams<{ category: string; id: string }>()
+  const productId = Number(params.id)
   const [product, setProduct] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
@@ -27,13 +26,13 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { language } = useLanguageStore()
 
   useEffect(() => {
-    api.products.get(parseInt(params.id)).then(data => {
+    api.products.get(productId).then(data => {
       setProduct({ ...data, price: parseFloat(data.price) })
       setLoading(false)
     }).catch(() => {
       setLoading(false)
     })
-  }, [params.id])
+  }, [productId])
 
   if (loading) {
     return <div className="pt-20 flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>

@@ -1,10 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import { useLanguageStore } from '@/store/language'
 import { t, cart as cartT } from '@/data/translations'
+import SafeImage from '@/components/SafeImage'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal } = useCartStore()
@@ -42,12 +42,7 @@ export default function CartPage() {
             {items.map((item) => (
               <div key={item.id} className="flex gap-4 bg-white p-4 rounded-xl shadow-sm">
                 <div className="w-24 h-24 relative rounded-lg overflow-hidden flex-shrink-0">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                  />
+                  <SafeImage src={item.image} alt={item.name} fill className="object-cover" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{item.name}</h3>

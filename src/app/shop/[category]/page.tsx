@@ -2,13 +2,10 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import { useLanguageStore } from '@/store/language'
 import { api } from '@/lib/api'
 import SafeImage from '@/components/SafeImage'
-
-interface CategoryPageProps {
-  params: { category: string }
-}
 
 function getName(item: any, lang: string, field: string) {
   if (lang === 'tr' && item[field + 'Tr']) return item[field + 'Tr']
@@ -16,7 +13,9 @@ function getName(item: any, lang: string, field: string) {
   return item[field + 'En'] || item[field] || ''
 }
 
-export default function CategoryPage({ params }: CategoryPageProps) {
+export default function CategoryPage() {
+  const params = useParams<{ category: string }>()
+  const categorySlug = params.category
   const [products, setProducts] = useState<any[]>([])
   const [category, setCategory] = useState<any>(null)
   const [sortBy, setSortBy] = useState('name')
@@ -24,13 +23,13 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
   useEffect(() => {
     Promise.all([
-      api.products.list(params.category),
+      api.products.list(categorySlug),
       api.categories.list()
     ]).then(([prods, cats]) => {
       setProducts(prods.map((p: any) => ({ ...p, price: parseFloat(p.price) })))
-      setCategory(cats.find((c: any) => c.slug === params.category))
+      setCategory(cats.find((c: any) => c.slug === categorySlug))
     })
-  }, [params.category])
+  }, [categorySlug])
 
   const sortedProducts = [...products].sort((a: any, b: any) => {
     if (sortBy === 'price-low') return a.price - b.price
@@ -38,7 +37,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     return getName(a, language, 'name').localeCompare(getName(b, language, 'name'))
   })
 
-  const title = category ? getName(category, language, 'name') : params.category
+  const title = category ? getName(category, language, 'name') : categorySlug
 
   return (
     <div className="pt-20">
